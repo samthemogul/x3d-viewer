@@ -1,0 +1,59 @@
+/* Navigation Controls component styles */
+.navigation-controls {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  padding: 0.75rem;
+  z-index: 2000;
+  background-color: hsl(220, 13%, 10%, 0.9);
+  border: 1px solid var(--control-border);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: var(--shadow-control);
+  border-radius: 0.5rem;
+}
+
+.navigation-controls__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.navigation-controls__title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.navigation-controls__button {
+  justify-content: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.navigation-controls__button--active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-glow);
+}
+
+.navigation-controls__button--inactive {
+  background-color: var(--control-hover);
+  color: var(--muted-foreground);
+}
+
+.navigation-controls__button--inactive:hover {
+  background-color: var(--control-active);
+  color: var(--foreground);
+}
+
+.navigation-controls__button svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.navigation-controls__divider {
+  border-top: 1px solid var(--control-border);
+  margin: 0.5rem 0;
+}

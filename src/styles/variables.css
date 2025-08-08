@@ -1,0 +1,99 @@
+/* Design system variables - converted from Tailwind custom properties */
+:root {
+  /* 3D Viewer Professional Dark Theme */
+  --background: hsl(220, 13%, 8%);
+  --foreground: hsl(220, 15%, 95%);
+
+  --card: hsl(220, 13%, 10%);
+  --card-foreground: hsl(220, 15%, 95%);
+
+  --popover: hsl(220, 13%, 10%);
+  --popover-foreground: hsl(220, 15%, 95%);
+
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(220, 13%, 8%);
+
+  --secondary: hsl(220, 13%, 15%);
+  --secondary-foreground: hsl(220, 15%, 85%);
+
+  --muted: hsl(220, 13%, 12%);
+  --muted-foreground: hsl(220, 9%, 55%);
+
+  --accent: hsl(217, 91%, 60%);
+  --accent-foreground: hsl(220, 13%, 8%);
+
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(220, 15%, 95%);
+
+  --border: hsl(220, 13%, 18%);
+  --input: hsl(220, 13%, 15%);
+  --ring: hsl(217, 91%, 60%);
+
+  --radius: 0.5rem;
+
+  /* 3D Viewer Specific Colors */
+  --viewer-bg: hsl(220, 13%, 6%);
+  --viewer-grid: hsl(220, 13%, 12%);
+  --control-bg: hsl(220, 13%, 10%);
+  --control-border: hsl(220, 13%, 20%);
+  --control-hover: hsl(220, 13%, 15%);
+  --control-active: hsl(217, 91%, 60%);
+  
+  /* View Cube Colors */
+  --cube-face: hsl(220, 13%, 18%);
+  --cube-face-hover: hsl(220, 13%, 22%);
+  --cube-face-active: hsl(217, 91%, 60%);
+  --cube-edge: hsl(220, 13%, 14%);
+  --cube-corner: hsl(220, 13%, 16%);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 70%));
+  --gradient-viewer: linear-gradient(180deg, hsl(220, 13%, 6%), hsl(220, 13%, 8%));
+  --gradient-control: linear-gradient(180deg, hsl(220, 13%, 12%), hsl(220, 13%, 8%));
+  
+  /* Shadows */
+  --shadow-control: 0 4px 20px hsl(220, 13%, 4%, 0.5);
+  --shadow-glow: 0 0 20px hsl(217, 91%, 60%, 0.3);
+  --shadow-cube: 0 8px 32px hsl(220, 13%, 2%, 0.8);
+
+  /* Sidebar */
+  --sidebar-background: hsl(220, 13%, 10%);
+  --sidebar-foreground: hsl(220, 15%, 85%);
+  --sidebar-primary: hsl(217, 91%, 60%);
+  --sidebar-primary-foreground: hsl(220, 13%, 8%);
+  --sidebar-accent: hsl(220, 13%, 15%);
+  --sidebar-accent-foreground: hsl(220, 15%, 85%);
+  --sidebar-border: hsl(220, 13%, 18%);
+  --sidebar-ring: hsl(217, 91%, 60%);
+}
+
+.dark {
+  /* Keep same values for dark mode since we're using dark theme by default */
+  --background: hsl(220, 13%, 8%);
+  --foreground: hsl(220, 15%, 95%);
+  --card: hsl(220, 13%, 10%);
+  --card-foreground: hsl(220, 15%, 95%);
+  --popover: hsl(220, 13%, 10%);
+  --popover-foreground: hsl(220, 15%, 95%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(220, 13%, 8%);
+  --secondary: hsl(220, 13%, 15%);
+  --secondary-foreground: hsl(220, 15%, 85%);
+  --muted: hsl(220, 13%, 12%);
+  --muted-foreground: hsl(220, 9%, 55%);
+  --accent: hsl(217, 91%, 60%);
+  --accent-foreground: hsl(220, 13%, 8%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(220, 15%, 95%);
+  --border: hsl(220, 13%, 18%);
+  --input: hsl(220, 13%, 15%);
+  --ring: hsl(217, 91%, 60%);
+  --sidebar-background: hsl(220, 13%, 10%);
+  --sidebar-foreground: hsl(220, 15%, 85%);
+  --sidebar-primary: hsl(217, 91%, 60%);
+  --sidebar-primary-foreground: hsl(220, 13%, 8%);
+  --sidebar-accent: hsl(220, 13%, 15%);
+  --sidebar-accent-foreground: hsl(220, 15%, 85%);
+  --sidebar-border: hsl(220, 13%, 18%);
+  --sidebar-ring: hsl(217, 91%, 60%);
+}
