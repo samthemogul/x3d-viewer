@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 
+
 export interface ViewCubeProps {
-  onRotationChange?: (rotation: { x: number; y: number }) => void;
+  onRotationChange?: (rotation: { x: number; y: number; z: number }) => void;
 }
 
 const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
@@ -10,11 +11,11 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
   // const animationFrameId = useRef<number | null>(null);
 
   // State for the cube's rotation in degrees.
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [justFinishedRotating, setJustFinishedRotating] = useState(false);
 
   // Reference to store the last mouse position without triggering re-renders.
-  const mousePositionRef = useRef({ x: 0, y: 0 });
+  const mousePositionRef = useRef({ x: 0, y: 0, z: 0 });
 
   // Function to handle the start of a drag.
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -25,7 +26,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
     if (e.button !== 0) return;
 
     // Store the initial mouse position
-    mousePositionRef.current = { x: e.clientX, y: e.clientY };
+    mousePositionRef.current = { x: e.clientX, y: e.clientY, z: 0 };
 
     // Disable the CSS transition for smooth dragging.
     if (cubeRef.current) {
@@ -49,15 +50,20 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         const newRotation = {
           x: prev.x - deltaY * 0.5,
           y: prev.y + deltaX * 0.5,
+          z: 0,
         };
         if (onRotationChange) {
-          onRotationChange(newRotation);
+          onRotationChange({
+            y: newRotation.x,
+            z: newRotation.y,
+            x: newRotation.z, // Assuming Z is not used in this context
+          });
         }
         return newRotation;
       });
 
       // Store the new mouse position.
-      mousePositionRef.current = { x: e.clientX, y: e.clientY };
+      mousePositionRef.current = { x: e.clientX, y: e.clientY, z: 0 };
     };
 
     // Function to handle the end of a drag.
@@ -140,40 +146,82 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
   ];
 
   const orientCube = (target: string) => {
+    const orientations: Record<string, { x: number; y: number; z: number }> = {
+    "face-front": { x: 0, y: 0, z: 0 },
+    "face-back": { x: 0, y: 180, z: 0 },
+    "face-right": { x: 0, y: -90, z: 0 },
+    "face-left": { x: 0, y: 90, z: 0 },
+    "face-top": { x: -90, y: 0, z: 0 },
+    "face-bottom": { x: 90, y: 0, z: 0 },
+    "edge-front-top": { x: -45, y: 0, z: 0 },
+    "edge-front-bottom": { x: 45, y: 0, z: 0 },
+    "edge-front-left": { x: 0, y: 45, z: 0 },
+    "edge-front-right": { x: 0, y: -45, z: 0 },
+    "edge-side-top-left": { x: 0, y: 90, z: 45 }, // Requires Z-axis rotation
+    "edge-side-top-right": { x: 0, y: 90, z: -45 }, // Requires Z-axis rotation
+    "edge-side-bottom-left": { x: 45, y: 90, z: -45 }, // Requires Z-axis rotation
+    "edge-side-bottom-right": { x: 45, y: -90, z: 45 }, // Requires Z-axis rotation
+    "edge-back-top": { x: -45, y: 180, z: 0 },
+    "edge-back-bottom": { x: 45, y: 180, z: 0 },
+    "edge-back-left": { x: 0, y: 135, z: 0 },
+    "edge-back-right": { x: 0, y: -135, z: 0 },
+    "corner-front-top-left": { x: -45, y: 45, z: 45 },
+    "corner-front-top-right": { x: -45, y: -45, z: -45 },
+    "corner-front-bottom-left": { x: 45, y: 45, z: -45 },
+    "corner-front-bottom-right": { x: 45, y: -45, z: 45 },
+    "corner-back-top-left": { x: -45, y: 135, z: 45 },
+    "corner-back-top-right": { x: -45, y: -135, z: -45 },
+    "corner-back-bottom-left": { x: 45, y: 135, z: -45 },
+    "corner-back-bottom-right": { x: 45, y: -135, z: 45 },
+  };
 
-    const orientations: Record<string, { x: number; y: number }> = {
-      "face-front": { x: 0, y: 0 },
-      "face-back": { x: 0, y: 180 },
-      "face-right": { x: 0, y: -90 },
-      "face-left": { x: 0, y: 90 },
-      "face-top": { x: -90, y: 0 },
-      "face-bottom": { x: 90, y: 0 },
-      "edge-front-top": { x: -45, y: 0 },
-      "edge-front-bottom": { x: 45, y: 0 },
-      "edge-front-left": { x: 0, y: 45 },
-      "edge-front-right": { x: 0, y: -45 },
-      "edge-side-top-left": { x: -45, y: 90 },
-      "edge-side-top-right": { x: -45, y: -90 },
-      "edge-side-bottom-left": { x: 45, y: 90 },
-      "edge-side-bottom-right": { x: 45, y: -90 },
-      "edge-back-top": { x: -45, y: 180 },
-      "edge-back-bottom": { x: 45, y: 180 },
-      "edge-back-left": { x: 0, y: 135 },
-      "edge-back-right": { x: 0, y: 225 },
-      "corner-front-top-left": { x: -45, y: 45 },
-      "corner-front-top-right": { x: -45, y: -45 },
-      "corner-front-bottom-left": { x: 45, y: 45 },
-      "corner-front-bottom-right": { x: 45, y: -45 },
-      "corner-back-top-left": { x: -45, y: 135 },
-      "corner-back-top-right": { x: -45, y: -135 },
-      "corner-back-bottom-left": { x: 45, y: 135 },
-      "corner-back-bottom-right": { x: 45, y: -135 },
-    };
     const orientation = orientations[target];
+
+    // Calculate the shortest path roataton from the current orientation and update the target orientation to that quivalent shortest path rotation.
+    if (!orientation) {
+      console.warn(`No orientation found for target: ${target}`);
+      return;
+    }
+    const absDiffX = Math.abs(rotation.x - orientation.x);
+    const absDiffY = Math.abs(rotation.y - orientation.y);
+    const xMin = Math.min(absDiffX, 360 - absDiffX);
+    const YMin = Math.min(absDiffY, 360 - absDiffY);
+    const xdeg =
+      xMin == absDiffX
+        ? rotation.x > orientation.x
+          ? rotation.x - absDiffX
+          : rotation.x + absDiffX
+        : rotation.x < orientation.x
+        ? rotation.x - (360 - absDiffX)
+        : rotation.x + (360 - absDiffX);
+    const ydeg =
+      YMin == absDiffY
+        ? rotation.y > orientation.y
+          ? rotation.y - absDiffY
+          : rotation.y + absDiffY
+        : rotation.y < orientation.y
+        ? rotation.y - (360 - absDiffY)
+        : rotation.y + (360 - absDiffY);
+
+    console.log({
+      xdeg,
+      ydeg,
+      curr: rotation,
+      orientation,
+      absDiffX,
+      absDiffY,
+      xMin,
+      YMin,
+    });
+
     if (orientation && !justFinishedRotating) {
-      setRotation(orientation);
-      if(onRotationChange) {
-        onRotationChange(orientation);
+      setRotation({
+        x: xdeg,
+        y: ydeg,
+        z: orientation.z,
+      });
+      if (onRotationChange) {
+        onRotationChange({ z: ydeg, y: xdeg, x: orientation.z });
       }
       setJustFinishedRotating(false); // Reset after setting rotation
     }
@@ -194,27 +242,30 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         <div
           className="cube-face front"
           onClick={() => orientCube("face-front")}
-        >FRONT</div>
-        <div
-          className="cube-face back"
-          onClick={() => orientCube("face-back")}
-        >BACK</div>
+        >
+          FRONT
+        </div>
+        <div className="cube-face back" onClick={() => orientCube("face-back")}>
+          BACK
+        </div>
         <div
           className="cube-face right"
           onClick={() => orientCube("face-right")}
-        >RIGHT</div>
-        <div
-          className="cube-face left"
-          onClick={() => orientCube("face-left")}
-        >LEFT</div>
-        <div
-          className="cube-face top"
-          onClick={() => orientCube("face-top")}
-        >TOP</div>
+        >
+          RIGHT
+        </div>
+        <div className="cube-face left" onClick={() => orientCube("face-left")}>
+          LEFT
+        </div>
+        <div className="cube-face top" onClick={() => orientCube("face-top")}>
+          TOP
+        </div>
         <div
           className="cube-face bottom"
           onClick={() => orientCube("face-bottom")}
-        >BOTTOM</div>
+        >
+          BOTTOM
+        </div>
 
         {/* Edges */}
         {edges.map((edge) =>
@@ -245,10 +296,10 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         {/* The Axis */}
         <div className="axis axis-x">
           <div className="axis-line"></div>
-          <div className="axis-label">X</div>
+          <div className="axis-label">Y</div>
         </div>
         <div className="axis axis-y">
-          <div className="axis-label">Y</div>
+          <div className="axis-label">X</div>
           <div className="axis-line"></div>
         </div>
         <div className="axis axis-z">

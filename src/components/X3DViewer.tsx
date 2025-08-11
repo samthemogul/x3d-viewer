@@ -5,7 +5,11 @@ import * as THREE from "three"; // Import THREE
 
 const X3DViewer = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [viewCubeRotation, setViewCubeRotation] = useState({ x: 0, y: 0 });
+  const [viewCubeRotation, setViewCubeRotation] = useState({
+    x: 0,
+    y: 0,
+    z: 0,
+  });
   const inlineRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -28,14 +32,14 @@ const X3DViewer = () => {
 
   // A helper to convert a Quaternion to X3D's axis-angle string format
   const toAxisAngleString = (quat: THREE.Quaternion): string => {
-    if (quat.w === 1) {
-      return "-0.5773502691896258 -0.5773502691896256 -0.5773502691896258 2.0943951023931953"; // No rotation, default to Y-axis with 0 angle
-    }
+    // if (quat.w === 1) {
+    //   return "-0.5773502691896258 -0.5773502691896256 -0.5773502691896258 2.0943951023931953"; // No rotation, default to Y-axis with 0 angle
+    // }
     const angle = 2 * Math.acos(quat.w);
     const s = Math.sqrt(1 - quat.w * quat.w);
     if (s < 0.001) {
       // If s is close to zero, axis is not well-defined
-      return "-0.5773502691896258 -0.5773502691896256 -0.5773502691896258 2.0943951023931953";
+      return "0 0 1 0";
     }
     const x = quat.x / s;
     const y = quat.y / s;
@@ -45,12 +49,14 @@ const X3DViewer = () => {
 
   const performQuaternionRotation = (
     xdeg: number,
-    ydeg: number
+    ydeg: number,
+    zdeg: number
   ): THREE.Quaternion => {
+    console.log(xdeg, ydeg, zdeg);
     // Adjust the x and z rotations to account for the default X3D orientation
-    const adjustedXDeg = xdeg -90;
-    const adjustedYDeg = ydeg;
-    const adjustedZDeg = -90; // Rotate Z by -90 to align with X3D
+    const adjustedXDeg = -zdeg; // Invert X-axis rotation
+    const adjustedYDeg = -ydeg - 90; // Invert Y-axis rotation
+    const adjustedZDeg = xdeg - 90; // Rotate Z by -90 to align with X3D
 
     // Convert degrees to radians
     const xRad = THREE.MathUtils.degToRad(adjustedXDeg);
@@ -71,10 +77,10 @@ const X3DViewer = () => {
       zRad
     );
 
-    // Combine the rotations by multiplying the quaternions
+    // Combine the rotations by multiplying the quaternions in the correct order
     const combinedQuat = new THREE.Quaternion()
-      .multiplyQuaternions(yQuat, xQuat)
-      .multiply(zQuat);
+      .multiplyQuaternions(zQuat, xQuat) // Apply Z first, then X
+      .multiply(yQuat); // Apply Y last
 
     return combinedQuat;
   };
@@ -83,7 +89,11 @@ const X3DViewer = () => {
     console.log(
       viewCubeRotation,
       toAxisAngleString(
-        performQuaternionRotation(viewCubeRotation.x, viewCubeRotation.y)
+        performQuaternionRotation(
+          viewCubeRotation.x,
+          viewCubeRotation.y,
+          viewCubeRotation.z
+        )
       )
     );
   }, [viewCubeRotation]);
@@ -111,14 +121,17 @@ const X3DViewer = () => {
                 description="Initial View"
               ></viewpoint>
               <transform
+                style={{
+                  transition: "rotation 0.5s ease-in-out",
+                }}
                 translation="0 0 0"
-                rotation={`-0.5773502691896258 -0.5773502691896256 -0.5773502691896258 2.0943951023931953`}
-                // rotation={toAxisAngleString(
-                //   performQuaternionRotation(
-                //     viewCubeRotation.x,
-                //     viewCubeRotation.y
-                //   )
-                // )}
+                rotation={toAxisAngleString(
+                  performQuaternionRotation(
+                    viewCubeRotation.x,
+                    viewCubeRotation.y,
+                    viewCubeRotation.z
+                  )
+                )}
               >
                 <inline
                   ref={inlineRef}
