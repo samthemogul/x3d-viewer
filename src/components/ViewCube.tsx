@@ -233,7 +233,6 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         {`
                    #cube-container {
                     transform: rotateX(${rotation.x}deg) rotateY(${rotation.y}deg);
-                    transition: transform 0.5s ease-in-out;
                    }
                 `}
       </style>

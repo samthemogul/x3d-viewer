@@ -117,7 +117,61 @@ const X3DViewer = () => {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     } else if (activeMode == "orbit") {
-      // Do something
+      if (e.button !== 0) return;
+
+      // Change cursor to indicate rotation
+      if (mainContainerRef.current) {
+        mainContainerRef.current.style.cursor = "grab";
+      }
+
+      const orbitStartRef = { x: e.clientX, y: e.clientY };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - orbitStartRef.x;
+        const deltaY = e.clientY - orbitStartRef.y;
+
+        setViewCubeRotation((prev) => {
+          const newRotation = {
+            x: prev.x - deltaY * 0.5, // Adjust rotation speed as needed
+            y: prev.y + deltaX * 0.5,
+            z: prev.z,
+          };
+
+          const quaternion = performQuaternionRotation(
+            newRotation.x,
+            newRotation.y,
+            newRotation.z
+          );
+
+          const transformElement = inlineRef.current?.parentElement;
+          if (transformElement) {
+            transformElement.setAttribute(
+              "rotation",
+              toAxisAngleString(quaternion)
+            );
+          }
+
+        
+
+          return newRotation;
+        });
+
+        orbitStartRef.x = e.clientX;
+        orbitStartRef.y = e.clientY;
+      };
+
+      const handleMouseUp = () => {
+        // Reset cursor style
+        if (mainContainerRef.current) {
+          mainContainerRef.current.style.cursor = "default";
+        }
+
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     } else if (activeMode == "zoomIn") {
       // Do Something
     } else if (activeMode == "zoomOut") {
