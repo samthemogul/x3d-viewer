@@ -1,12 +1,12 @@
 import React from "react";
 import { RotateCcw, ZoomIn, ZoomOut, MousePointer, Hand } from "lucide-react";
+import { useNavigation } from "../hooks/useNavigation";
 
 interface NavigationControlsProps {
   onPanMode?: () => void;
   onOrbitMode?: () => void;
   onZoomMode?: (mode: "zoomIn" | "zoomOut") => void;
   onResetView?: () => void;
-  activeMode?: "pan" | "orbit" | "zoomIn" | "zoomOut";
 }
 
 const Navigation: React.FC<NavigationControlsProps> = ({
@@ -14,8 +14,8 @@ const Navigation: React.FC<NavigationControlsProps> = ({
   onOrbitMode,
   onZoomMode,
   onResetView,
-  activeMode = "orbit",
 }) => {
+  const { activeMode } = useNavigation();
   return (
     <div className="navigation-controls card">
       <div className="navigation-controls__content">

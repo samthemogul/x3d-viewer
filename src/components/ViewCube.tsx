@@ -54,9 +54,9 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         };
         if (onRotationChange) {
           onRotationChange({
-            y: newRotation.x,
-            z: newRotation.y,
-            x: newRotation.z, // Assuming Z is not used in this context
+            y: newRotation.y,
+            z: newRotation.z,
+            x: newRotation.x, // Assuming Z is not used in this context
           });
         }
         return newRotation;
@@ -157,7 +157,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
     "edge-front-bottom": { x: 45, y: 0, z: 0 },
     "edge-front-left": { x: 0, y: 45, z: 0 },
     "edge-front-right": { x: 0, y: -45, z: 0 },
-    "edge-side-top-left": { x: 0, y: 90, z: 45 }, // Requires Z-axis rotation
+    "edge-side-top-left": { x: -45, y: 90, z: -45 }, // Requires Z-axis rotation
     "edge-side-top-right": { x: 0, y: 90, z: -45 }, // Requires Z-axis rotation
     "edge-side-bottom-left": { x: 45, y: 90, z: -45 }, // Requires Z-axis rotation
     "edge-side-bottom-right": { x: 45, y: -90, z: 45 }, // Requires Z-axis rotation
@@ -221,7 +221,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         z: orientation.z,
       });
       if (onRotationChange) {
-        onRotationChange({ z: ydeg, y: xdeg, x: orientation.z });
+        onRotationChange({ z: 0, y: ydeg, x: xdeg });
       }
       setJustFinishedRotating(false); // Reset after setting rotation
     }
@@ -296,10 +296,10 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         {/* The Axis */}
         <div className="axis axis-x">
           <div className="axis-line"></div>
-          <div className="axis-label">Y</div>
+          <div className="axis-label">X</div>
         </div>
         <div className="axis axis-y">
-          <div className="axis-label">X</div>
+          <div className="axis-label">Y</div>
           <div className="axis-line"></div>
         </div>
         <div className="axis axis-z">

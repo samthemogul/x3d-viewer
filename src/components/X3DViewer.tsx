@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import Navigation from "./Navigation";
 import ViewCube from "./ViewCube";
 import * as THREE from "three"; // Import THREE
+import { useNavigation } from "../hooks/useNavigation";
 
 const X3DViewer = () => {
+  const { activeMode, setActiveMode } = useNavigation(); // Use the navigation context
+
   const [isLoading, setIsLoading] = useState(true);
   const [viewCubeRotation, setViewCubeRotation] = useState({
     x: 0,
@@ -11,6 +14,8 @@ const X3DViewer = () => {
     z: 0,
   });
   const inlineRef = useRef<HTMLElement | null>(null);
+  const panStartRef = useRef({ x: 0, y: 0 }); // Store initial mouse position for panning
+  const mainContainerRef = useRef<HTMLDivElement | null>(null); // Ref for the main container
 
   useEffect(() => {
     const checkModelLoaded = () => {
@@ -52,58 +57,112 @@ const X3DViewer = () => {
     ydeg: number,
     zdeg: number
   ): THREE.Quaternion => {
-    console.log(xdeg, ydeg, zdeg);
     // Adjust the x and z rotations to account for the default X3D orientation
-    const adjustedXDeg = -zdeg; // Invert X-axis rotation
-    const adjustedYDeg = -ydeg - 90; // Invert Y-axis rotation
-    const adjustedZDeg = xdeg - 90; // Rotate Z by -90 to align with X3D
+    const viewX_deg = -xdeg - 90;
+    const viewY_deg = ydeg - 90;
+    const viewZ_deg = zdeg;
 
-    // Convert degrees to radians
-    const xRad = THREE.MathUtils.degToRad(adjustedXDeg);
-    const yRad = THREE.MathUtils.degToRad(adjustedYDeg);
-    const zRad = THREE.MathUtils.degToRad(adjustedZDeg);
+    // 2. MAP the ViewCube axes to the Model's axes, as you described.
+    //    And convert them to radians for Three.js.
+    //    Model's X rotation <-- ViewCube's X rotation
+    const modelX_rad = THREE.MathUtils.degToRad(viewX_deg);
+    //    Model's Y rotation <-- ViewCube's Z rotation
+    const modelY_rad = THREE.MathUtils.degToRad(viewZ_deg);
+    //    Model's Z rotation <-- ViewCube's Y rotation
+    const modelZ_rad = THREE.MathUtils.degToRad(viewY_deg);
 
-    // Create quaternions for the rotations around the X, Y, and Z axes
-    const xQuat = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(1, 0, 0),
-      xRad
-    );
-    const yQuat = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      yRad
-    );
-    const zQuat = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(0, 0, 1),
-      zRad
-    );
+    // 3. Create an Euler object. This represents the final orientation.
+    //    The order 'YXZ' is a good choice. It means:
+    //    - First, rotate around the Model's Y-axis (Yaw).
+    //    - Then, rotate around the *new* X-axis (Pitch).
+    //    - Finally, rotate around the *final* Z-axis (Roll).
+    const euler = new THREE.Euler(modelX_rad, modelY_rad, modelZ_rad, "YXZ");
 
-    // Combine the rotations by multiplying the quaternions in the correct order
-    const combinedQuat = new THREE.Quaternion()
-      .multiplyQuaternions(zQuat, xQuat) // Apply Z first, then X
-      .multiply(yQuat); // Apply Y last
+    // 4. Create the final quaternion directly from our Euler setup.
+    const modelQuaternion = new THREE.Quaternion().setFromEuler(euler);
 
-    return combinedQuat;
+    return modelQuaternion;
   };
 
-  useEffect(() => {
-    console.log(
-      viewCubeRotation,
-      toAxisAngleString(
-        performQuaternionRotation(
-          viewCubeRotation.x,
-          viewCubeRotation.y,
-          viewCubeRotation.z
-        )
-      )
-    );
-  }, [viewCubeRotation]);
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeMode !== "pan") return;
+    if (e.button !== 0) return;
+    // Ensure the target is the model or its container
+    const target = e.target as HTMLElement;
+    if (!mainContainerRef.current?.contains(target)) return;
+    mainContainerRef.current.style.cursor = "grab";
+
+    panStartRef.current = { x: e.clientX, y: e.clientY };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - panStartRef.current.x; // Apply scaling factor for smoother movement
+      const deltaY = e.clientY - panStartRef.current.y; // Apply scaling factor for smoother movement
+
+      // Directly update the transform's translation attribute for real-time movement
+      const transformElement = inlineRef.current?.parentElement;
+      if (transformElement) {
+        const currentTranslation = transformElement
+          .getAttribute("translation")
+          ?.split(" ") || ["0", "0", "0"];
+        const updatedX = parseFloat(currentTranslation[0]) + deltaX;
+        const updatedY = parseFloat(currentTranslation[1]) - deltaY;
+        transformElement.setAttribute(
+          "translation",
+          `${updatedX} ${updatedY} 0`
+        );
+      }
+
+      panStartRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handleMouseUp = () => {
+      mainContainerRef.current!.style.cursor = "default"; // Reset cursor style
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleOrbit = () => {
+    setActiveMode("orbit");
+  };
+
+  const handleZoom = (mode: "zoomIn" | "zoomOut") => {
+    setActiveMode(mode);
+  };
+
+  const handlePanMode = () => {
+    setActiveMode("pan");
+  };
+
+  // useEffect(() => {
+  //   if (activeMode === "pan") {
+  //     document.addEventListener("mouseup", handleMouseUp);
+  //   } else {
+  //     document.removeEventListener("mouseup", handleMouseUp);
+  //   }
+
+  //   return () => {
+  //     document.removeEventListener("mouseup", handleMouseUp);
+  //   };
+  // }, [activeMode, handleMouseUp]);
 
   return (
     <div className="">
       {/* Main Area */}
-      <div className="x3d-viewer__main">
+      <div
+        className="x3d-viewer__main"
+        ref={mainContainerRef}
+        onMouseDown={handleMouseDown}
+      >
         {/* Navigation */}
-        <Navigation />
+        <Navigation
+          onOrbitMode={handleOrbit}
+          onPanMode={handlePanMode}
+          onZoomMode={(m) => handleZoom(m)}
+        />
 
         {/* View Cube */}
         <ViewCube onRotationChange={setViewCubeRotation} />
@@ -124,7 +183,7 @@ const X3DViewer = () => {
                 style={{
                   transition: "rotation 0.5s ease-in-out",
                 }}
-                translation="0 0 0"
+                translation={`0 0 0`} // Apply panning offset
                 rotation={toAxisAngleString(
                   performQuaternionRotation(
                     viewCubeRotation.x,
