@@ -27,7 +27,9 @@ declare module 'react' {
       showProgress?: string;
       useGeoCache?: boolean;
     };
-    scene: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+    scene: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+      translation?: string;
+    };
     viewpoint: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
       position?: string;
       orientation?: string;

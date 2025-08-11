@@ -62,67 +62,67 @@ const X3DViewer = () => {
     const viewY_deg = ydeg - 90;
     const viewZ_deg = zdeg;
 
-    // 2. MAP the ViewCube axes to the Model's axes, as you described.
-    //    And convert them to radians for Three.js.
-    //    Model's X rotation <-- ViewCube's X rotation
     const modelX_rad = THREE.MathUtils.degToRad(viewX_deg);
-    //    Model's Y rotation <-- ViewCube's Z rotation
     const modelY_rad = THREE.MathUtils.degToRad(viewZ_deg);
-    //    Model's Z rotation <-- ViewCube's Y rotation
     const modelZ_rad = THREE.MathUtils.degToRad(viewY_deg);
 
-    // 3. Create an Euler object. This represents the final orientation.
-    //    The order 'YXZ' is a good choice. It means:
-    //    - First, rotate around the Model's Y-axis (Yaw).
-    //    - Then, rotate around the *new* X-axis (Pitch).
-    //    - Finally, rotate around the *final* Z-axis (Roll).
     const euler = new THREE.Euler(modelX_rad, modelY_rad, modelZ_rad, "YXZ");
 
-    // 4. Create the final quaternion directly from our Euler setup.
     const modelQuaternion = new THREE.Quaternion().setFromEuler(euler);
 
     return modelQuaternion;
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (activeMode !== "pan") return;
-    if (e.button !== 0) return;
-    // Ensure the target is the model or its container
-    const target = e.target as HTMLElement;
-    if (!mainContainerRef.current?.contains(target)) return;
-    mainContainerRef.current.style.cursor = "grab";
-
-    panStartRef.current = { x: e.clientX, y: e.clientY };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - panStartRef.current.x; // Apply scaling factor for smoother movement
-      const deltaY = e.clientY - panStartRef.current.y; // Apply scaling factor for smoother movement
-
-      // Directly update the transform's translation attribute for real-time movement
-      const transformElement = inlineRef.current?.parentElement;
-      if (transformElement) {
-        const currentTranslation = transformElement
-          .getAttribute("translation")
-          ?.split(" ") || ["0", "0", "0"];
-        const updatedX = parseFloat(currentTranslation[0]) + deltaX;
-        const updatedY = parseFloat(currentTranslation[1]) - deltaY;
-        transformElement.setAttribute(
-          "translation",
-          `${updatedX} ${updatedY} 0`
-        );
-      }
+    if (activeMode == "pan") {
+      if (e.button !== 0) return;
+      // Ensure the target is the model or its container
+      const target = e.target as HTMLElement;
+      if (!mainContainerRef.current?.contains(target)) return;
+      mainContainerRef.current.style.cursor = "grab";
 
       panStartRef.current = { x: e.clientX, y: e.clientY };
-    };
 
-    const handleMouseUp = () => {
-      mainContainerRef.current!.style.cursor = "default"; // Reset cursor style
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+      const PAN_SPEED = 0.9;
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - panStartRef.current.x;
+        const deltaY = e.clientY - panStartRef.current.y;
+
+        // Directly update the transform's translation attribute for real-time movement
+        const transformElement = inlineRef.current?.parentElement;
+        if (transformElement) {
+          const currentTranslation = transformElement
+            .getAttribute("translation")
+            ?.split(" ") || ["0", "0", "0"];
+          const updatedX =
+            parseFloat(currentTranslation[0]) + deltaX * PAN_SPEED;
+          const updatedY =
+            parseFloat(currentTranslation[1]) - deltaY * PAN_SPEED;
+          transformElement.setAttribute(
+            "translation",
+            `${updatedX} ${updatedY} 0`
+          );
+        }
+
+        panStartRef.current = { x: e.clientX, y: e.clientY };
+      };
+
+      const handleMouseUp = () => {
+        mainContainerRef.current!.style.cursor = "default"; // Reset cursor style
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    } else if (activeMode == "orbit") {
+      // Do something
+    } else if (activeMode == "zoomIn") {
+      // Do Something
+    } else if (activeMode == "zoomOut") {
+      // Do Something
+    } else return;
   };
 
   const handleOrbit = () => {
@@ -136,18 +136,6 @@ const X3DViewer = () => {
   const handlePanMode = () => {
     setActiveMode("pan");
   };
-
-  // useEffect(() => {
-  //   if (activeMode === "pan") {
-  //     document.addEventListener("mouseup", handleMouseUp);
-  //   } else {
-  //     document.removeEventListener("mouseup", handleMouseUp);
-  //   }
-
-  //   return () => {
-  //     document.removeEventListener("mouseup", handleMouseUp);
-  //   };
-  // }, [activeMode, handleMouseUp]);
 
   return (
     <div className="">
