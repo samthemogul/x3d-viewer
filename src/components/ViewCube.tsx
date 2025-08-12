@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useRotation } from "../hooks/useRotation";
+import type { Rotation } from "../context/RotationCotext";
 
 export interface ViewCubeProps {
   onRotationChange?: (rotation: { x: number; y: number; z: number }) => void;
@@ -42,7 +43,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
       }
 
       // Update rotation based on mouse movement.
-      setRotation((prev) => {
+      setRotation((prev: Rotation) => {
         const newRotation = {
           x: prev.x - deltaY * 0.5,
           y: prev.y + deltaX * 0.5,
@@ -55,7 +56,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
             x: newRotation.x,
           });
         }
-        return newRotation;
+        return newRotation as Rotation;
       });
 
       // Store the new mouse position.

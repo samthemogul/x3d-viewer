@@ -11,10 +11,7 @@ const X3DViewer = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { rotation, setRotation } = useRotation();
   const inlineRef = useRef<HTMLElement | null>(null);
-  const panStartRef = useRef({ x: 0, y: 0 });
   const viewpointRef = useRef<HTMLElement | null>(null);
-
-  const [panCoordinates, setPanCoordinates] = useState({ x: 0, y: 0 });
 
   const mainContainerRef = useRef<HTMLDivElement | null>(null);
 

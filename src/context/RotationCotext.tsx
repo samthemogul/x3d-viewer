@@ -8,7 +8,7 @@ export interface Rotation {
 
 interface RotationContextValue {
   rotation: Rotation;
-  setRotation: (rotation: Rotation) => void;
+  setRotation: React.Dispatch<React.SetStateAction<Rotation>>;
 }
 
 
