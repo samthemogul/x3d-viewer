@@ -1,32 +1,35 @@
 import React, { createContext, useState } from "react";
 
-// Define the types for the navigation modes
-export type NavigationMode = "orbit" | "pan" | "zoomIn" | "zoomOut";
 
-// Define the context value type
+export type NavigationMode = "orbit" | "pan" | "zoom";
+
+
 interface NavigationContextValue {
   activeMode: NavigationMode;
-  setActiveMode: (mode: NavigationMode) => void;
+  handleSetActiveMode: (mode: NavigationMode) => void;
 }
 
-// Create the context
+
 const NavigationContext = createContext<NavigationContextValue | undefined>(
   undefined
 );
 
-// Create a provider component
+
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [activeMode, setActiveMode] = useState<NavigationMode>("orbit");
 
+  const handleSetActiveMode = (mode: NavigationMode) => {
+    setActiveMode(mode);
+  }
+
   return (
-    <NavigationContext.Provider value={{ activeMode, setActiveMode }}>
+    <NavigationContext.Provider value={{ activeMode, handleSetActiveMode }}>
       {children}
     </NavigationContext.Provider>
   );
 };
 
-// Moved the `useNavigation` hook to a separate file to resolve the Fast Refresh issue.
 
 export { NavigationContext };

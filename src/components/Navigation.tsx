@@ -1,11 +1,11 @@
 import React from "react";
-import { RotateCcw, ZoomIn, ZoomOut, MousePointer, Hand } from "lucide-react";
+import { RotateCcw, ZoomIn, MousePointer, Hand } from "lucide-react";
 import { useNavigation } from "../hooks/useNavigation";
 
 interface NavigationControlsProps {
   onPanMode?: () => void;
   onOrbitMode?: () => void;
-  onZoomMode?: (mode: "zoomIn" | "zoomOut") => void;
+  onZoomMode?: () => void;
   onResetView?: () => void;
 }
 
@@ -47,26 +47,16 @@ const Navigation: React.FC<NavigationControlsProps> = ({
 
         <button
           className={`btn navigation-controls__button ${
-            activeMode === "zoomIn"
+            activeMode === "zoom"
               ? "navigation-controls__button--active"
               : "navigation-controls__button--inactive"
           }`}
-          onClick={onZoomMode?.bind(null, "zoomIn")}
+          onClick={onZoomMode}
         >
           <ZoomIn className="w-3 h-3" />
-          Zoom In
+          Zoom
         </button>
-        <button
-          className={`btn navigation-controls__button ${
-            activeMode === "zoomOut"
-              ? "navigation-controls__button--active"
-              : "navigation-controls__button--inactive"
-          }`}
-          onClick={onZoomMode?.bind(null, "zoomOut")}
-        >
-          <ZoomOut className="w-3 h-3" />
-          Zoom Out
-        </button>
+        
 
         <div className="navigation-controls__divider"></div>
 

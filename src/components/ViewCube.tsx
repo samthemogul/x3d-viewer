@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-
+import { useRotation } from "../hooks/useRotation";
 
 export interface ViewCubeProps {
   onRotationChange?: (rotation: { x: number; y: number; z: number }) => void;
@@ -8,13 +8,9 @@ export interface ViewCubeProps {
 const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
   const cubeRef = useRef<HTMLDivElement>(null);
 
-  // const animationFrameId = useRef<number | null>(null);
-
-  // State for the cube's rotation in degrees.
-  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
+  const {rotation, setRotation} = useRotation();
   const [justFinishedRotating, setJustFinishedRotating] = useState(false);
 
-  // Reference to store the last mouse position without triggering re-renders.
   const mousePositionRef = useRef({ x: 0, y: 0, z: 0 });
 
   // Function to handle the start of a drag.
@@ -36,7 +32,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
 
     let isDragging = false; // Track if dragging is happening
 
-    // Function to handle the dragging motion.
+    
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - mousePositionRef.current.x;
       const deltaY = e.clientY - mousePositionRef.current.y;
@@ -56,7 +52,7 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
           onRotationChange({
             y: newRotation.y,
             z: newRotation.z,
-            x: newRotation.x, // Assuming Z is not used in this context
+            x: newRotation.x,
           });
         }
         return newRotation;
@@ -66,13 +62,8 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
       mousePositionRef.current = { x: e.clientX, y: e.clientY, z: 0 };
     };
 
-    // Function to handle the end of a drag.
+   
     const handleMouseUp = () => {
-      // Re-enable the transition and change cursor when dragging stops.
-      if (cubeRef.current) {
-        cubeRef.current.style.transition = "transform 0.5s ease-in-out";
-        cubeRef.current.style.cursor = "grab";
-      }
 
       // Remove the event listeners.
       document.removeEventListener("mousemove", handleMouseMove);
@@ -146,34 +137,39 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
   ];
 
   const orientCube = (target: string) => {
+    if (cubeRef.current) {
+      // cubeRef.current.style.transition = "transform 0.5s ease-in-out";
+      cubeRef.current.style.cursor = "grab";
+    }
+
     const orientations: Record<string, { x: number; y: number; z: number }> = {
-    "face-front": { x: 0, y: 0, z: 0 },
-    "face-back": { x: 0, y: 180, z: 0 },
-    "face-right": { x: 0, y: -90, z: 0 },
-    "face-left": { x: 0, y: 90, z: 0 },
-    "face-top": { x: -90, y: 0, z: 0 },
-    "face-bottom": { x: 90, y: 0, z: 0 },
-    "edge-front-top": { x: -45, y: 0, z: 0 },
-    "edge-front-bottom": { x: 45, y: 0, z: 0 },
-    "edge-front-left": { x: 0, y: 45, z: 0 },
-    "edge-front-right": { x: 0, y: -45, z: 0 },
-    "edge-side-top-left": { x: -45, y: 90, z: -45 }, // Requires Z-axis rotation
-    "edge-side-top-right": { x: 0, y: 90, z: -45 }, // Requires Z-axis rotation
-    "edge-side-bottom-left": { x: 45, y: 90, z: -45 }, // Requires Z-axis rotation
-    "edge-side-bottom-right": { x: 45, y: -90, z: 45 }, // Requires Z-axis rotation
-    "edge-back-top": { x: -45, y: 180, z: 0 },
-    "edge-back-bottom": { x: 45, y: 180, z: 0 },
-    "edge-back-left": { x: 0, y: 135, z: 0 },
-    "edge-back-right": { x: 0, y: -135, z: 0 },
-    "corner-front-top-left": { x: -45, y: 45, z: 45 },
-    "corner-front-top-right": { x: -45, y: -45, z: -45 },
-    "corner-front-bottom-left": { x: 45, y: 45, z: -45 },
-    "corner-front-bottom-right": { x: 45, y: -45, z: 45 },
-    "corner-back-top-left": { x: -45, y: 135, z: 45 },
-    "corner-back-top-right": { x: -45, y: -135, z: -45 },
-    "corner-back-bottom-left": { x: 45, y: 135, z: -45 },
-    "corner-back-bottom-right": { x: 45, y: -135, z: 45 },
-  };
+      "face-front": { x: 0, y: 0, z: 0 },
+      "face-back": { x: 0, y: 180, z: 0 },
+      "face-right": { x: 0, y: -90, z: 0 },
+      "face-left": { x: 0, y: 90, z: 0 },
+      "face-top": { x: -90, y: 0, z: 0 },
+      "face-bottom": { x: 90, y: 0, z: 0 },
+      "edge-front-top": { x: -45, y: 0, z: 0 },
+      "edge-front-bottom": { x: 45, y: 0, z: 0 },
+      "edge-front-left": { x: 0, y: 45, z: 0 },
+      "edge-front-right": { x: 0, y: -45, z: 0 },
+      "edge-side-top-left": { x: -45, y: 90, z: -45 }, // Requires Z-axis rotation
+      "edge-side-top-right": { x: 0, y: 90, z: -45 }, // Requires Z-axis rotation
+      "edge-side-bottom-left": { x: 45, y: 90, z: -45 }, // Requires Z-axis rotation
+      "edge-side-bottom-right": { x: 45, y: -90, z: 45 }, // Requires Z-axis rotation
+      "edge-back-top": { x: -45, y: 180, z: 0 },
+      "edge-back-bottom": { x: 45, y: 180, z: 0 },
+      "edge-back-left": { x: 0, y: 135, z: 0 },
+      "edge-back-right": { x: 0, y: -135, z: 0 },
+      "corner-front-top-left": { x: -45, y: 45, z: 45 },
+      "corner-front-top-right": { x: -45, y: -45, z: -45 },
+      "corner-front-bottom-left": { x: 45, y: 45, z: -45 },
+      "corner-front-bottom-right": { x: 45, y: -45, z: 45 },
+      "corner-back-top-left": { x: -45, y: 135, z: 45 },
+      "corner-back-top-right": { x: -45, y: -135, z: -45 },
+      "corner-back-bottom-left": { x: 45, y: 135, z: -45 },
+      "corner-back-bottom-right": { x: 45, y: -135, z: 45 },
+    };
 
     const orientation = orientations[target];
 
@@ -203,17 +199,6 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
         ? rotation.y - (360 - absDiffY)
         : rotation.y + (360 - absDiffY);
 
-    console.log({
-      xdeg,
-      ydeg,
-      curr: rotation,
-      orientation,
-      absDiffX,
-      absDiffY,
-      xMin,
-      YMin,
-    });
-
     if (orientation && !justFinishedRotating) {
       setRotation({
         x: xdeg,
@@ -223,7 +208,13 @@ const ViewCube: React.FC<ViewCubeProps> = ({ onRotationChange }) => {
       if (onRotationChange) {
         onRotationChange({ z: 0, y: ydeg, x: xdeg });
       }
-      setJustFinishedRotating(false); // Reset after setting rotation
+      setJustFinishedRotating(false);
+
+      setTimeout(() => {
+        if (cubeRef.current) {
+          cubeRef.current.style.transition = "none";
+        }
+      }, 1000);
     }
   };
 
