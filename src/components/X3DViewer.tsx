@@ -12,6 +12,8 @@ const X3DViewer = () => {
   const { rotation, setRotation } = useRotation();
   const inlineRef = useRef<HTMLElement | null>(null);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const viewpointRef = useRef<HTMLElement | null>(null);
+
   const [panCoordinates, setPanCoordinates] = useState({ x: 0, y: 0 });
 
   const mainContainerRef = useRef<HTMLDivElement | null>(null);
@@ -81,7 +83,7 @@ const X3DViewer = () => {
 
       mainContainerRef.current.style.cursor = "grab";
 
-      const PAN_SPEED = 0.9;
+      // const PAN_SPEED = 0.9;
 
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
@@ -92,26 +94,61 @@ const X3DViewer = () => {
 
       console.log(startX, startY);
 
-      const handleMouseMove = (e: MouseEvent) => {
-        const deltaX = e.clientX - windowWidth / 2;
-        const deltaY = e.clientY - windowHeight / 2;
+      const start = { x: e.clientX, y: e.clientY };
 
-        const moveX = deltaX - startX;
-        const moveY = deltaY - startY;
+      const handleMouseMove = (evt: MouseEvent) => {
+        const dx = evt.clientX - start.x;
+        const dy = evt.clientY - start.y;
+        start.x = evt.clientX;
+        start.y = evt.clientY;
 
-        // Get the former translation
-        const xdViewer = document.getElementById("x3d-viewer");
-        if (!xdViewer) return;
+        if (viewpointRef.current) {
+          // Get position & orientation
+          const pos = viewpointRef.current
+            .getAttribute("position")
+            ?.split(" ")
+            .map(Number) || [0, 0, 0];
+          const orientation = viewpointRef.current
+            .getAttribute("orientation")
+            ?.split(" ")
+            .map(Number) || [0, 0, 1, 0];
 
-        // if (!currentTranslate) return;
-        const currentX = panCoordinates.x;
-        const currentY = panCoordinates.y;
+          // Axis-angle to quaternion
+          const axis = new THREE.Vector3(
+            orientation[0],
+            orientation[1],
+            orientation[2]
+          );
+          const angle = orientation[3];
+          const quat = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 
-        const newX = currentX + moveX * PAN_SPEED;
-        const newY = currentY + moveY * PAN_SPEED;
+          // Get right & up in world space
+          const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quat);
+          const up = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
 
-        xdViewer.style.transform = `translateX(${newX}px) translateY(${newY}px)`;
-        setPanCoordinates({ x: newX, y: newY });
+          // Pan speed
+          const PAN_SPEED = 0.5;
+          const moveVec = new THREE.Vector3()
+            .addScaledVector(right, -dx * PAN_SPEED)
+            .addScaledVector(up, dy * PAN_SPEED);
+
+          // Move both position & centerOfRotation
+          const newPos = new THREE.Vector3(pos[0], pos[1], pos[2]).add(moveVec);
+          viewpointRef.current.setAttribute(
+            "position",
+            `${newPos.x} ${newPos.y} ${newPos.z}`
+          );
+
+          const cor = viewpointRef.current
+            .getAttribute("centerOfRotation")
+            ?.split(" ")
+            .map(Number) || [0, 0, 0];
+          const newCOR = new THREE.Vector3(cor[0], cor[1], cor[2]).add(moveVec);
+          viewpointRef.current.setAttribute(
+            "centerOfRotation",
+            `${newCOR.x} ${newCOR.y} ${newCOR.z}`
+          );
+        }
       };
 
       const handleMouseUp = () => {
@@ -222,90 +259,136 @@ const X3DViewer = () => {
     console.log(activeMode);
   }, [activeMode]);
 
+  
+  const MIN_ZOOM_DISTANCE = 300; // closest allowed distance
+  const MAX_ZOOM_DISTANCE = 1500; // farthest allowed distance
+  const ZOOM_SCALE = 0.2; // fraction of current distance per 100 wheel delta
+  const CENTER_SHIFT_FACTOR = 0.25; // fraction of camera move applied to centerOfRotation
+
   const handleWheel = (e: WheelEvent) => {
-    // Prevent default scrolling behavior
+    if (
+      activeMode !== "zoom" ||
+      !viewpointRef.current ||
+      !mainContainerRef.current
+    )
+      return;
+
     e.preventDefault();
-    e.stopPropagation();
 
-    const ZOOM_SPEEDX = 0.05;
-    const ZOOM_SPEEDY = 0.1; // Determines how fast the zoom happens
-    const MIN_ZOOM_IN = 1500; // Minimum zoom level
-    const MAX_ZOOM_IN = 200; // Maximum zoom level
+    const container = mainContainerRef.current!;
+    const rect = container.getBoundingClientRect();
 
-    if (activeMode !== "zoom") return;
+    // mouse coords in NDC (-1..1)
+    const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    // Get the current viewpoint element
-    const viewpointElement = document.querySelector("viewpoint");
-    if (!viewpointElement) return;
-
-    // Parse the current position of the viewpoint
-    const currentPosition = viewpointElement
+    // viewpoint position/orientation/center
+    const posAttr = viewpointRef.current
       .getAttribute("position")
       ?.split(" ")
-      .map(parseFloat) || [0, 0, 700];
+      .map(Number) || [0, 0, 0];
+    const corAttr = viewpointRef.current
+      .getAttribute("centerOfRotation")
+      ?.split(" ")
+      .map(Number) || [0, 0, 0];
+    const orientAttr = viewpointRef.current
+      .getAttribute("orientation")
+      ?.split(" ")
+      .map(Number) || [0, 0, 1, 0];
 
-    // Calculate the zoom delta
-    const zoomDelta = e.deltaY * ZOOM_SPEEDY;
+    const positionVec = new THREE.Vector3(posAttr[0], posAttr[1], posAttr[2]);
+    const corVec = new THREE.Vector3(corAttr[0], corAttr[1], corAttr[2]);
 
-    // Clamp the zoom level
-    const newZoomLevel = currentPosition[2] + zoomDelta;
+    // build quaternion safely (handle zero-angle)
+    const axis = new THREE.Vector3(orientAttr[0], orientAttr[1], orientAttr[2]);
+    const angle = orientAttr[3] ?? 0;
+    const quat = new THREE.Quaternion();
+    if (Math.abs(angle) < 1e-9 || axis.length() < 1e-9) {
+      quat.identity();
+    } else {
+      axis.normalize();
+      quat.setFromAxisAngle(axis, angle);
+    }
 
-    if (newZoomLevel > MIN_ZOOM_IN || newZoomLevel < MAX_ZOOM_IN) return;
+    // compute ray direction in *view* space then rotate into world
+    const fov = parseFloat(
+      viewpointRef.current.getAttribute("fieldOfView") || "1.1"
+    ); // radians
+    const aspect = rect.width / rect.height;
+    const tanFov = Math.tan(fov / 2);
 
-    // Get the window size
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
+    const rayDirView = new THREE.Vector3(
+      ndcX * aspect * tanFov,
+      ndcY * tanFov,
+      -1
+    ).normalize();
 
-    // Calculate the cursor position in normalized device coordinates (NDC)
-    const cursorX = -(e.clientX - (windowWidth / 2 + 50));
-    const cursorY = e.clientY - (windowHeight / 2 + 50);
+    const rayDirWorld = rayDirView.clone().applyQuaternion(quat).normalize();
 
-    // Calculate the difference to be added to both x and y from start(panCoordinates)
-    const direction = {
-      x: cursorX - panCoordinates.x,
-      y: cursorY - panCoordinates.y,
-      z: 0, // No change in z for zoom
+    // current distance from camera to pivot
+    const pc = positionVec.clone().sub(corVec);
+    const currentDistance = pc.length() || 1;
+
+    // desired move along the ray (signed). We use -e.deltaY so scrolling up (deltaY negative) moves camera forward.
+    const sDesired = -e.deltaY * ((currentDistance * ZOOM_SCALE) / 100);
+
+    // quick candidate new position and its distance to COR
+    const candidatePos = positionVec
+      .clone()
+      .addScaledVector(rayDirWorld, sDesired);
+    const candidateDistance = candidatePos.distanceTo(corVec);
+
+    let sApplied = sDesired;
+
+    // if candidateDistance is out of bounds, solve for s where distance == boundary (quadratic)
+    const clampTo = (D: number) => {
+      // solve s^2 + 2 b s + a = 0 where:
+      // b = r · (p - c)
+      // a = |p - c|^2 - D^2
+      const b = rayDirWorld.dot(pc);
+      const a = pc.dot(pc) - D * D;
+      const disc = b * b - a;
+      if (disc >= 0) {
+        const sqrtDisc = Math.sqrt(disc);
+        const s1 = -b + sqrtDisc;
+        const s2 = -b - sqrtDisc;
+        // pick the root closest to the desired move (so we stop exactly where intended if we're overshooting)
+        const pick =
+          Math.abs(s1 - sDesired) < Math.abs(s2 - sDesired) ? s1 : s2;
+        return pick;
+      } else {
+        // no intersection along this ray (degenerate). fallback: place camera radially at D distance.
+        const dirRadial = pc.clone().normalize(); // direction from COR to camera
+        const fallbackPos = corVec.clone().add(dirRadial.multiplyScalar(D));
+        // compute s that moves from current pos to fallbackPos along rayDirWorld:
+        // fallbackPos = p + s * r  => s = r·(fallbackPos - p)  (approx because r is unit)
+        return rayDirWorld.dot(fallbackPos.clone().sub(positionVec));
+      }
     };
 
-    console.log(
-      `translateX(${
-        panCoordinates.x + direction.x * ZOOM_SPEEDX
-      }px) translateY(${panCoordinates.y + direction.y * ZOOM_SPEEDY}px)`
-    );
+    if (candidateDistance < MIN_ZOOM_DISTANCE) {
+      sApplied = clampTo(MIN_ZOOM_DISTANCE);
+    } else if (candidateDistance > MAX_ZOOM_DISTANCE) {
+      sApplied = clampTo(MAX_ZOOM_DISTANCE);
+    }
 
-    const xdViewer = document.getElementById("x3d-viewer");
-    if (!xdViewer) return;
-    // Update the xd-viewer transform
-    // xdViewer.style.transform = `translateX(${
-    //   panCoordinates.x + direction.x * ZOOM_SPEEDX
-    // }px) translateY(${panCoordinates.y + direction.y * ZOOM_SPEEDY}px)`;
-    // Update the pan coordinates
-    // setPanCoordinates({
-    //   x: panCoordinates.x + direction.x * ZOOM_SPEEDX,
-    //   y: panCoordinates.y + direction.y * ZOOM_SPEEDY,
-    // });
-    // const updatedX =
-    //   cursorX > currentPosition[0]
-    //     ? currentPosition[0] +
-    //       ZOOM_SPEEDX * Math.abs(cursorX - currentPosition[0])
-    //     : cursorX == currentPosition[0]
-    //     ? cursorX
-    //     : currentPosition[0] -
-    //       ZOOM_SPEEDX * Math.abs(cursorX - currentPosition[0]);
-    // const updatedY =
-    //   cursorY > currentPosition[1]
-    //     ? currentPosition[1] +
-    //       ZOOM_SPEEDY * Math.abs(cursorY - currentPosition[1])
-    //     : cursorY == currentPosition[1]
-    //     ? cursorY
-    //     : currentPosition[1] -
-    //       ZOOM_SPEEDY * Math.abs(cursorY - currentPosition[1]);
-
-    // Update the viewpoint position
-    viewpointElement.setAttribute(
+    // apply movement
+    const newPos = positionVec.clone().addScaledVector(rayDirWorld, sApplied);
+    viewpointRef.current.setAttribute(
       "position",
-      `${currentPosition[0]} ${currentPosition[1]} ${newZoomLevel}`
+      `${newPos.x} ${newPos.y} ${newPos.z}`
     );
+
+    // move centerOfRotation slightly toward cursor for nicer feel
+    if (CENTER_SHIFT_FACTOR > 0) {
+      const corNew = corVec
+        .clone()
+        .addScaledVector(rayDirWorld, sApplied * CENTER_SHIFT_FACTOR);
+      viewpointRef.current.setAttribute(
+        "centerOfRotation",
+        `${corNew.x} ${corNew.y} ${corNew.z}`
+      );
+    }
   };
 
   useEffect(() => {
@@ -355,6 +438,7 @@ const X3DViewer = () => {
           >
             <scene>
               <viewpoint
+                ref={viewpointRef}
                 position="0 0 700"
                 orientation={`0 0 0 0`}
                 centerOfRotation={`0 0 0`}
